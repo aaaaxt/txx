@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI在学习：大学生"智"伴图鉴 | 数据新闻</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.0.0/dist/echarts-wordcloud.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #7209b7;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --purple: #9d4edd;
+            --teal: #4895ef;
+            --pink: #f72585;
+            --orange: #f8961e;
+            --bg-gradient-start: #f5f7fa;
+            --bg-gradient-end: #e3e8f0;
+            --card-bg: white;
+            --text-color: #212529;
+            --nav-bg: rgba(255,255,255,0.95);
+        }
+        
+        body.dark {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --accent: #fd79a8;
+            --light: #2d3436;
+            --dark: #dfe6e9;
+            --bg-gradient-start: #1a1a2e;
+            --bg-gradient-end: #16213e;
+            --card-bg: #2d3436;
+            --text-color: #dfe6e9;
+            --nav-bg: rgba(0,0,0,0.8);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        /* 鼠标跟随粒子容器 */
+        .particle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.6;
+            pointer-events: none;
+            animation: particleFade 1s ease-out forwards;
+        }
+        
+        @keyframes particleFade {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translate(var(--dx, 30px), var(--dy, -30px)) scale(0);
+                opacity: 0;
+            }
+        }
+        
+        /* 主题切换按钮 */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+        
+        /* 悬浮AI助手 */
+        .ai-assistant {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .ai-assistant:hover {
+            transform: scale(1.1);
+        }
+        
+        .assistant-bubble {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            animation: bounce 2s infinite;
+        }
+        
+        .assistant-bubble span {
+            font-size: 30px;
+        }
+        
+        .assistant-popup {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            width: 250px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: none;
+            animation: fadeInUp 0.3s;
+            color: var(--text-color);
+        }
+        
+        .ai-assistant.active .assistant-popup {
+            display: block;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 滚动动画类 */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* 卡片悬停3D效果 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        /* 数据解读区域 */
+        .insight-box {
+            background: linear-gradient(135deg, #f0f4ff, #e6eeff);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--primary);
+        }
+        
+        body.dark .insight-box {
+            background: linear-gradient(135deg, #2d3436, #1a1a2e);
+        }
+        
+        .insight-title {
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .insight-title i {
+            font-size: 1.2rem;
+        }
+        
+        /* 双栏布局样式 - 左侧图表更大，右侧卡片更小 */
+        .split-layout {
+            display: flex;
+            gap: 2rem;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+        
+        .split-main {
+            flex: 3;
+            min-width: 0;
+        }
+        
+        .split-side {
+            flex: 0.8;
+            min-width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .data-mini-card {
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--card-bg));
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(67, 97, 238, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .data-mini-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .data-mini-title {
+            font-size: 0.85rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .data-mini-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--secondary);
+            line-height: 1.2;
+        }
+        
+        .data-mini-unit {
+            font-size: 0.9rem;
+            font-weight: normal;
+            color: var(--light-text);
+        }
+        
+        .data-mini-desc {
+            font-size: 0.8rem;
+            color: var(--light-text);
+            margin-top: 0.5rem;
+        }
+        
+        .quote-mini {
+            font-style: italic;
+            font-size: 0.85rem;
+            padding: 0.8rem;
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+        }
+        
+        /* 其余样式保持不变 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #3a0ca3 0%, #4361ee 50%, #4cc9f0 100%);
+            color: white;
+            padding: 4rem 0 6rem;
+            position: relative;
+            overflow: hidden;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-content {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+        
+        .title {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+            background: linear-gradient(90deg, #fff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-size: 1.8rem;
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            font-weight: 300;
+            opacity: 0.9;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+        }
+        
+        .ai-robot {
+            position: absolute;
+            width: 180px;
+            height: 220px;
+            bottom: 10%;
+            right: 10%;
+            z-index: 1;
+        }
+        
+        .robot-head {
+            width: 120px;
+            height: 120px;
+            background: #fff;
+            border-radius: 40% 40% 30% 30%;
+            position: relative;
+            margin: 0 auto;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            animation: float 4s ease-in-out infinite;
+        }
+        
+        .robot-face {
+            position: absolute;
+            width: 80px;
+            height: 40px;
+            top: 35px;
+            left: 20px;
+        }
+        
+        .robot-eye {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #4361ee;
+            border-radius: 50%;
+            top: 10px;
+            animation: blink 3s infinite;
+        }
+        
+        .robot-eye.left { left: 10px; }
+        .robot-eye.right { right: 10px; }
+        
+        .robot-mouth {
+            position: absolute;
+            width: 40px;
+            height: 10px;
+            background: #3a0ca3;
+            border-radius: 5px;
+            bottom: 5px;
+            left: 20px;
+            animation: talk 2s infinite;
+        }
+        
+        .robot-body {
+            width: 100px;
+            height: 80px;
+            background: #fff;
+            border-radius: 20px;
+            margin: 0 auto;
+            position: relative;
+            top: -10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .robot-screen {
+            width: 60px;
+            height: 40px;
+            background: #4cc9f0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            animation: screenPulse 2s infinite;
+        }
+        
+        .data-stream {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .data-node {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 50%;
+            animation: dataFlow 15s linear infinite;
+        }
+        
+        .data-node:nth-child(2n) { background: rgba(76, 201, 240, 0.7); animation-duration: 20s; }
+        .data-node:nth-child(3n) { background: rgba(247, 37, 133, 0.7); animation-duration: 25s; }
+        
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes blink { 0%,45%,55%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.1); } }
+        @keyframes talk { 0%,40%,60%,100% { height: 10px; } 50% { height: 5px; } }
+        @keyframes screenPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(76,201,240,0.7); } 50% { box-shadow: 0 0 0 10px rgba(76,201,240,0); } }
+        @keyframes dataFlow { 0% { transform: translateY(100vh) translateX(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-100px) translateX(calc(100vw * var(--x-multiplier, 0.5))); opacity: 0; } }
+        
+        nav {
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+        
+        .nav-link {
+            margin: 0 1.5rem;
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            position: relative;
+            padding: 0.5rem 0;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover { color: var(--primary); }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after { width: 100%; }
+        
+        section { padding: 5rem 0; }
+        .section-title { text-align: center; margin-bottom: 3rem; }
+        .section-title h2 { font-size: 2.5rem; color: var(--secondary); margin-bottom: 1rem; }
+        .section-title p { font-size: 1.2rem; color: #666; max-width: 700px; margin: 0 auto; }
+        
+        .chart-container { height: 400px; margin: 2rem 0; position: relative; }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 2rem; }
+        
+        .comparison-card { display: flex; gap: 2rem; }
+        .comparison-item { flex: 1; text-align: center; padding: 1.5rem; border-radius: 10px; background: var(--card-bg); box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+        .comparison-item.student { border-top: 4px solid var(--primary); }
+        .comparison-item.teacher { border-top: 4px solid var(--accent); }
+        .comparison-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; }
+        .comparison-value { font-size: 2rem; font-weight: 700; color: var(--secondary); margin: 1rem 0; }
+        
+        .quote {
+            background: linear-gradient(135deg, #f0f4ff, #e6eeff);
+            border-left: 4px solid var(--primary);
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            position: relative;
+        }
+        body.dark .quote { background: linear-gradient(135deg, #2d3436, #1a1a2e); }
+        .quote::before { content: "'"; font-size: 4rem; color: var(--primary); opacity: 0.2; position: absolute; top: -10px; left: 10px; }
+        .quote-author { text-align: right; margin-top: 1rem; font-weight: 600; color: var(--secondary); }
+        
+        .sources { background: var(--light); padding: 3rem 0; margin-top: 4rem; }
+        .sources h3 { text-align: center; margin-bottom: 2rem; color: var(--secondary); }
+        .source-list { max-width: 800px; margin: 0 auto; }
+        .source-item { margin-bottom: 1rem; padding: 1rem; background: var(--card-bg); border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        footer { background: var(--dark); color: white; padding: 3rem 0; text-align: center; }
+        .footer-content { max-width: 800px; margin: 0 auto; }
+        .report-name { font-size: 1.5rem; margin-bottom: 1rem; color: var(--success); }
+        
+        .chart-icon { position: absolute; width: 60px; height: 60px; z-index: 10; pointer-events: none; }
+        .student-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%234361ee"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>') no-repeat center; background-size: contain; }
+        .teacher-icon { background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%237209b7"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>') no-repeat center; background-size: contain; }
+        
+        @media (max-width: 768px) {
+            .title { font-size: 2.5rem; }
+            .subtitle { font-size: 1.3rem; }
+            .ai-robot { display: none; }
+            .chart-grid { grid-template-columns: 1fr; }
+            .comparison-card { flex-direction: column; }
+            .nav-container { flex-wrap: wrap; }
+            .nav-link { margin: 0.5rem; }
+            .theme-toggle { top: 10px; right: 10px; padding: 4px 10px; font-size: 12px; }
+            .ai-assistant { bottom: 15px; right: 15px; }
+            .assistant-bubble { width: 45px; height: 45px; }
+            .assistant-bubble span { font-size: 22px; }
+            .split-layout { flex-direction: column; }
+            .split-side { flex-direction: row; flex-wrap: wrap; }
+            .data-mini-card { flex: 1; min-width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle-container" id="particleContainer"></div>
+    <button class="theme-toggle" id="themeToggle">🌓 深色模式</button>
+    
+    <div class="ai-assistant" id="aiAssistant">
+        <div class="assistant-bubble"><span>🤖</span></div>
+        <div class="assistant-popup">
+            <strong>AI小助手</strong><br>
+            💡 你知道吗？<br>
+            99.2%的大学生都在使用AI工具！<br>
+            🔥 重度用户每天使用AI超过一次<br>
+            🎓 64%的学生担心过度依赖AI
+        </div>
+    </div>
+    
+    <header>
+        <div class="data-stream" id="dataStream"></div>
+        <div class="ai-robot">
+            <div class="robot-head"><div class="robot-face"><div class="robot-eye left"></div><div class="robot-eye right"></div><div class="robot-mouth"></div></div></div>
+            <div class="robot-body"><div class="robot-screen">AI</div></div>
+        </div>
+        <div class="container header-content">
+            <h1 class="title">AI在学习：大学生"智"伴图鉴</h1>
+            <p class="subtitle">当AI成为校园"第六器官"，我们如何与这位"全能学伴"共处？基于全国多所高校的调查，揭示00后与AI的相爱相杀</p>
+            <div style="margin-top: 3rem;"><a href="#prevalence" class="cta-button" style="display: inline-block; background: white; color: #4361ee; padding: 0.8rem 1.5rem; border-radius: 30px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">探索数据故事</a></div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container nav-container">
+            <a href="#prevalence" class="nav-link">普及现状</a>
+            <a href="#usage" class="nav-link">使用行为</a>
+            <a href="#comparison" class="nav-link">师生对比</a>
+            <a href="#conflict" class="nav-link">AI双刃剑</a>
+            <a href="#global" class="nav-link">全球视野</a>
+            <a href="#future" class="nav-link">未来展望</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section>
+            <div class="card fade-up">
+                <p>"你眼中的世界是什么样的？"</p>
+                <p>"……宇宙是无穷无尽的。"</p>
+                <p>这不是科幻电影中的场面，但屏幕上跟随光标逐渐显现的答复，却让就读于北京语言大学的綦昊感到，自己仿佛置身于科幻大片之中。</p>
+                <div class="quote">"仿佛交到了一个远方的朋友。"现在，他是AI工具的忠实用户，"几乎每天都会用到"。</div>
+                <p>随着人工智能技术的不断发展，AI工具开始进入普通人的生活场景。中青校媒调查显示，<strong>84.88%受访大学生曾使用过AI工具</strong>，其中16.30%受访者经常使用。而根据麦可思数据，国内高校师生几乎全部都曾在学习和工作中使用生成式AI，从未使用过生成式AI的高校师生比例仅为<strong>1%</strong>。</p>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🚀</i> 全面渗透：AI已成校园“标配”</div>
+                    <p>AI在高校的普及速度远超预期，已从"少数人的玩具"变为"大多数人的工具"。这种快速普及反映了AI技术在教育领域的巨大潜力，也预示着高等教育模式正在发生深刻变革。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="prevalence">
+            <div class="section-title"><h2>「普」天同庆：AI已成校园"标配"</h2><p>从尝鲜到日常，AI工具在高校的渗透率已接近饱和</p></div>
+            <div class="card fade-up">
+                <div class="card-title"><i>📊</i> 高校AI使用率对比</div>
+                <div class="chart-container"><canvas id="usageRateChart"></canvas><div class="chart-icon student-icon" style="top: 20%; left: 15%;"></div><div class="chart-icon teacher-icon" style="bottom: 30%; right: 20%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🏆</i> 中国领跑：99.2%大学生拥抱AI</div>
+                    <p>中国大学生AI使用率高达99.2%，几乎达到全员普及的程度，远超英国学生的92%。这一数据表明，中国高校已成为AI技术应用的"热土"，数字原住民对新兴技术的接受度极高。值得注意的是，中国高校师生的整体使用率(99%)略低于纯学生群体，可能反映了教师群体对新技术的接受存在一定滞后性。</p>
+                </div>
+            </div>
+            <div class="chart-grid">
+                <div class="card fade-up">
+                    <div class="card-title"><i>🚀</i> 使用频率分布</div>
+                    <div class="chart-container"><canvas id="frequencyChart"></canvas></div>
+                    <div class="insight-box">
+                        <div class="insight-title"><i>⚡</i> 重度依赖：近六成学生高频使用</div>
+                        <p>近六成大学生(58%)频繁使用AI工具，其中11.7%已成为"重度用户"。这种使用频率的分化反映了AI在学生学习生活中扮演的不同角色——对部分学生而言，AI已是不可或缺的学习伙伴；对另一些学生，它仍是辅助工具。仅0.8%的学生完全不用AI，这一群体可能面临"数字鸿沟"风险。</p>
+                    </div>
+                </div>
+                <div class="card fade-up">
+                    <div class="card-title"><i>🎯</i> 各年级使用差异</div>
+                    <div class="chart-container"><canvas id="gradeUsageChart"></canvas></div>
+                    <div class="insight-box">
+                        <div class="insight-title"><i>📈</i> 年级递增：大四使用率是大一2.6倍</div>
+                        <p>大四学生的AI重度使用率(21.2%)是大一学生(8.0%)的2.65倍，呈现明显的"年级递增"现象。这可能源于高年级学生面临更复杂的学术任务和就业压力，对效率工具需求更高。同时，随着在校时间增长，学生对AI工具的了解和熟练度也相应提升。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="usage">
+            <div class="section-title"><h2>「用」心良苦：AI如何渗透校园生活</h2><p>从学习助手到情感伴侣，AI在校园中的角色日益多元</p></div>
+            <div class="card fade-up">
+                <div class="card-title"><i>📚</i> AI在学习场景中的应用</div>
+                <div class="chart-container"><div id="usageScenarioChart" style="width:100%; height:100%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🔍</i> 查询&翻译：AI最擅长的两件事</div>
+                    <p>资料查询(61.3%)和翻译(58.3%)是AI最主要的学习应用场景，反映了学生对信息获取效率的迫切需求。值得注意的是，写作辅助(45.8%)也成为重要用途，这可能引发对学术原创性的担忧。同时，AI在多媒体创作(绘图修图26.4%，音视频生成24.3%)中的应用也不容忽视，显示其正向创意领域扩展。</p>
+                </div>
+            </div>
+            
+            <!-- 学科差异：不同专业的AI偏好 - 双栏布局，图表高度450px -->
+            <div class="card fade-up">
+                <div class="card-title"><i>💼</i> 学科差异：不同专业的AI偏好</div>
+                <div class="split-layout">
+                    <div class="split-main">
+                        <div class="chart-container" style="height: 450px;"><canvas id="majorUsageChart"></canvas></div>
+                    </div>
+                    <div class="split-side">
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">📊 理工农医专业</div>
+                            <div class="data-mini-number">25.9%</div>
+                            <div class="data-mini-desc">用AI辅助代码撰写</div>
+                        </div>
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">📝 文史哲专业</div>
+                            <div class="data-mini-number">52.7%</div>
+                            <div class="data-mini-desc">用AI润色文本</div>
+                        </div>
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">📊 经管法专业</div>
+                            <div class="data-mini-number">47.5%</div>
+                            <div class="data-mini-desc">偏好制作PPT和报表</div>
+                        </div>
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">🎨 艺术教育专业</div>
+                            <div class="data-mini-number">43.1%</div>
+                            <div class="data-mini-desc">用于图像生成和视频剪辑</div>
+                        </div>
+                        <div class="quote-mini">
+                            <i>💡</i> 不同学科学生对AI的使用差异显著，理工科重代码，文科重润色，经管重报表，艺术重创作。
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🧪</i> 各取所需：理工写代码，文科润色强</div>
+                    <p>不同学科对AI的应用呈现明显的"专业适配"特征：理工科重代码(85%)、文科重文字(90%)、经管重报表(85%)、艺术重创作(图像生成80%，音视频剪辑75%)。这种差异化使用反映了AI工具的灵活性，能够满足不同学科的核心需求，但也可能导致学科间的"数字技能鸿沟"进一步扩大。</p>
+                </div>
+            </div>
+
+            <!-- 桑基图 -->
+            <div class="card fade-up">
+                <div class="card-title"><i>🔄</i> AI使用场景流向图</div>
+                <div class="chart-container"><div id="sankeyChart" style="width:100%; height:100%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🌊</i> 学科→场景：AI流向了哪里？</div>
+                    <p>桑基图展示了不同学科学生使用AI的主要场景流向。理工科学生主要流向代码编写和计算，文科学生主要流向文字润色和翻译，经管类学生流向报表制作，艺术类学生流向图像生成和音视频制作。这种流向分析揭示了学科特点与AI应用之间的内在联系。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="comparison">
+            <div class="section-title"><h2>「师」与「生」：AI使用图鉴大不同</h2><p>学生把AI当"学伴"，教师把AI当"助教"</p></div>
+            <div class="card fade-up">
+                <div class="comparison-card">
+                    <div class="comparison-item student"><div class="comparison-title">学生使用目的</div><div class="comparison-value">77.2%</div><p>查找信息/知识</p><div class="comparison-value">70.3%</div><p>文本润色/翻译</p><div class="comparison-value">67.1%</div><p>总结/梳理观点</p></div>
+                    <div class="comparison-item teacher"><div class="comparison-title">教师使用目的</div><div class="comparison-value">76.6%</div><p>课程资料制作</p><div class="comparison-value">71.7%</div><p>设计课堂活动/习题</p><div class="comparison-value">53.8%</div><p>解答学生疑问</p></div>
+                </div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>👥</i> 角色分化：学生求效率，教师为备课</div>
+                    <p>师生使用AI的目的呈现鲜明对比：学生主要用于提升个人学习效率(查找信息77.2%、文本润色70.3%)，而教师则更多用于教学准备工作(课程资料制作76.6%、设计活动71.7%)。这种差异反映了AI在高等教育中的双重角色——既是学生的"个人学伴"，也是教师的"教学助理"。值得注意的是，教师在"解答学生疑问"方面的应用相对较低(53.8%)，可能反映了对AI回答准确性的顾虑。</p>
+                </div>
+            </div>
+            <div class="card fade-up">
+                <div class="card-title"><i>🎭</i> AI在大学生活中的多元角色</div>
+                <div class="chart-container"><div id="aiRoleChart" style="width:100%; height:100%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>💬</i> 不止工具：近八成学生视AI为“朋友”</div>
+                    <p>AI已超越工具属性，成为大学生活中的"多面手"：近八成(79.1%)学生将其视为可闲聊的"朋友"，超过工作助手(59.8%)和学习伙伴(38.5%)。更值得注意的是，26%的学生在情绪低落时会向AI寻求安慰，这一比例与向社交媒体寻求支持(26.2%)基本持平。这表明AI正在填补当代年轻人的部分情感支持需求，但也引发了对其可能替代真实人际连接的担忧。</p>
+                </div>
+            </div>
+            <div class="card fade-up">
+                <div class="card-title"><i>☀️</i> AI使用层次结构</div>
+                <div class="chart-container"><div id="sunburstChart" style="width:100%; height:100%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🗂️</i> 层层渗透：从学习到生活的全面覆盖</div>
+                    <p>旭日图展示了AI在大学生活中的层次化应用结构。从核心的学习场景向外扩展，可以看到AI已渗透到社交、娱乐、生活规划等多个层面。最外层显示的是具体应用场景，如资料查询、翻译、制定旅游计划等，反映了AI在大学生生活中的全方位渗透。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="conflict">
+            <div class="section-title"><h2>「机」不可失？AI使用的双刃剑</h2><p>效率提升的背后，是学术诚信与思维能力的隐忧</p></div>
+            <div class="chart-grid">
+                <div class="card fade-up">
+                    <div class="card-title"><i>⚠️</i> 学术争议风险</div>
+                    <div class="chart-container"><canvas id="academicRiskChart"></canvas></div>
+                    <div class="insight-box">
+                        <div class="insight-title"><i>⚖️</i> 近七成学生面临AI学术争议</div>
+                        <p>近三分之二(65.9%)的学生直接或间接面临AI学术争议风险，其中42%亲身经历过学术纠纷。这一高比例反映了当前高校在AI学术规范方面的模糊地带。随着AI生成内容越来越难以检测，学术诚信体系面临前所未有的挑战，亟需建立清晰的使用边界和检测标准。</p>
+                    </div>
+                </div>
+                <div class="card fade-up">
+                    <div class="card-title"><i>😰</i> 学生对AI的担忧</div>
+                    <div class="chart-container"><canvas id="concernChart"></canvas></div>
+                    <div class="insight-box">
+                        <div class="insight-title"><i>🧠</i> 最怕思维懒惰，超六成学生焦虑</div>
+                        <p>学生对AI的态度呈现"既依赖又警惕"的矛盾心理：超六成(62.3%)担忧思维懒惰，过半(53.7%)担心忽视身边人，四成(40.9%)害怕心理依赖。这些担忧反映了年轻一代对技术异化的清醒认识——他们享受AI带来的便利，但也警惕其可能带来的人文能力退化。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card fade-up">
+                <div class="card-title"><i>🔥</i> 担忧程度与使用频率关系</div>
+                <div class="chart-container"><div id="heatmapChart" style="width:100%; height:100%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>📊</i> 越重度，越怕思维懒惰</div>
+                    <p>热力图展示了不同使用频率的学生群体对AI的担忧程度。颜色越深表示担忧程度越高。可以看到，重度用户对"思维懒惰"和"心理依赖"的担忧最为明显，而轻度用户更担心"职业被取代"。这种差异反映了不同使用群体对AI风险的不同感知。</p>
+                </div>
+            </div>
+            <div class="card fade-up"><div class="quote">"任何先进工具都可能带来人类的某些能力的丧失...问题在于我们是不是能够接受以丧失某些能力为代价。"<div class="quote-author">—— 复旦大学计算机科学技术学院教授 肖仰华</div></div></div>
+        </section>
+
+        <section id="global">
+            <div class="section-title"><h2>「境」外之声：全球高校的AI应对</h2><p>从全面禁止到有限放开，各国高校的AI政策演变</p></div>
+            <div class="card fade-up">
+                <div class="card-title"><i>🌍</i> 中英大学生AI使用对比</div>
+                <div class="chart-container"><canvas id="globalComparisonChart"></canvas></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🇨🇳vs🇬🇧</i> 中国普及率领先，英国评估更开放</div>
+                    <p>中英两国大学生在AI使用上呈现有趣差异：中国学生在整体使用率(99.2% vs 92%)上领先，但英国学生在评估中使用AI的比例更高(88% vs 65.9%)。这可能反映了英国高校对AI采取了更开放的态度，而中国高校在学术评估方面仍相对保守。两国频繁使用AI的比例均为58%，显示全球大学生对AI的依赖程度趋于一致。</p>
+                </div>
+            </div>
+            <div class="card fade-up">
+                <div class="card-title"><i>🏫</i> 高校AI政策演变</div>
+                <div class="chart-container"><div id="policyTimeline" style="width:100%; height:100%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🔄</i> 从禁止到开放：政策钟摆摇摆</div>
+                    <p>高校对AI的态度经历了从"全面禁止"到"有限放开"的显著转变。2023年，包括剑桥、港大在内的多所名校禁止使用ChatGPT；而到2024年，这些学校纷纷解除禁令并提供AI工具。这种政策转变反映了教育界对AI认知的深化——从视其为"学术威胁"到承认其"教学价值"，并试图在风险与收益间找到平衡点。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="future">
+            <div class="section-title"><h2>「智」在何方：人机共存的未来</h2><p>在技术便利与人文自主间寻找平衡</p></div>
+            
+            <!-- 学生应对AI时代的策略 - 双栏布局，图表高度450px -->
+            <div class="card fade-up">
+                <div class="card-title"><i>🔮</i> 学生应对AI时代的策略</div>
+                <div class="split-layout">
+                    <div class="split-main">
+                        <div class="chart-container" style="height: 450px;"><canvas id="futureStrategyChart"></canvas></div>
+                    </div>
+                    <div class="split-side">
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">📚 主动学习AI知识</div>
+                            <div class="data-mini-number">62.3%</div>
+                            <div class="data-mini-desc">计划学习AI知识以驾驭工具</div>
+                        </div>
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">💪 提升专业能力</div>
+                            <div class="data-mini-number">59.7%</div>
+                            <div class="data-mini-desc">选择增强不可替代性</div>
+                        </div>
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">🎨 培养创造能力</div>
+                            <div class="data-mini-number">62.0%</div>
+                            <div class="data-mini-desc">视创造为AI时代核心能力</div>
+                        </div>
+                        <div class="data-mini-card">
+                            <div class="data-mini-title">🤔 发展批判思维</div>
+                            <div class="data-mini-number">56.0%</div>
+                            <div class="data-mini-desc">重视批判性思维培养</div>
+                        </div>
+                        <div class="quote-mini">
+                            <i>💡</i> 学生更看重与AI互补的能力：创造(62.0%)、批判性思维(56.0%)、提问反思(54.1%)、人机协作(52.8%)。
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>💪</i> 主动进化：学AI、强专业、练创造</div>
+                    <p>面对AI浪潮，大学生展现出理性的应对策略：超六成选择"学习AI知识"(62.3%)和"培养创造力"(62.0%)，近六成注重"提升专业能力"(59.7%)和"发展批判思维"(56.0%)。这种选择反映了年轻一代对"人机协作"而非"人机竞争"的清醒认识——他们不抗拒技术，但更注重培养AI难以替代的人类独特能力。</p>
+                </div>
+            </div>
+
+            <!-- 词云图 -->
+            <div class="card fade-up">
+                <div class="card-title"><i>☁️</i> AI相关关键词词云</div>
+                <div class="chart-container"><div id="wordCloudChart" style="width:100%; height:100%;"></div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🗣️</i> 学生心声：“效率”与“依赖”交织</div>
+                    <p>词云展示了大学生对AI认知的关键词频率。"效率"、"学习"、"工具"等词出现频率最高，反映了AI在提升学习效率方面的核心价值。"依赖"、"风险"、"思维"等词也占据重要位置，表明学生对AI潜在问题的清醒认识。这种关键词分布直观呈现了当代大学生对AI的复杂态度。</p>
+                </div>
+            </div>
+            <div class="card fade-up">
+                <div class="quote">"技术本身并不是目的，而是实现人类潜能的手段。"<div class="quote-author">—— 比尔·盖茨</div></div>
+                <div class="insight-box">
+                    <div class="insight-title"><i>🎯</i> 结语：人机共舞，教育何为？</div>
+                    <p>AI已成为当代大学生学习生活中不可分割的"第六器官"，这种深度融入既带来了效率的飞跃，也引发了能力的隐忧。调查显示，年轻一代并非盲目拥抱技术，而是对AI的双刃剑效应有着清醒认知。未来的关键不在于抵制或放任，而在于建立智能时代的教育新范式——既善用AI增强人类能力，又守护那些使人之所以为人的核心素养：批判思维、创造力和情感连接。在这场人机共舞中，教育的使命是帮助学生成为技术的主人，而非奴隶。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="sources">
+        <div class="container">
+            <h3>数据来源</h3>
+            <div class="source-list">
+                <div class="source-item">1. 麦可思研究院《2025年高校师生AI应用及素养研究》</div>
+                <div class="source-item">2. 中国青年报社 & Soul App《2025年大学生AI使用行为与心态洞察报告》</div>
+                <div class="source-item">3. 英国高等教育政策研究所(HEPI)《2025年学生生成式人工智能调查报告》</div>
+                <div class="source-item">4. 中青校媒《关于AI工具使用的问卷调查》(样本量：7055份)</div>
+                <div class="source-item">5. 财联社AI daily《高校AI使用调查》</div>
+                <div class="source-item">6. 中国社会科学网《报告调查大学生AI使用：学术争议困扰凸显》</div>
+                <div class="source-item">7. Lumina Foundation & Gallup《2026年高等教育状况调查》</div>
+                <div class="source-item">8. 前程无忧《2026届校招市场AI人才需求报告》</div>
+                <div class="source-item">9. 中国教育科学研究院《2025年AI教育应用调研》</div>
+                <div class="source-item">10. 数字教育委员会(DEC)《2026年全球AI学生调查》</div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container footer-content">
+            <div class="report-name">「AI在学习」大学生AI使用行为数据报告</div>
+            <p>学生：田欣欣 指导教师：吴茜</p>
+            <p>本报告基于全国多所高校的调查研究，旨在揭示AI在高等教育中的现状、挑战与未来</p>
+            <p>© 2025</p>
+        </div>
+    </footer>
+
+    <script>
+        function createDataNodes() {
+            const dataStream = document.getElementById('dataStream');
+            for (let i = 0; i < 30; i++) {
+                const node = document.createElement('div');
+                node.className = 'data-node';
+                node.style.left = `${Math.random() * 100}%`;
+                node.style.animationDelay = `${Math.random() * 20}s`;
+                node.style.setProperty('--x-multiplier', Math.random());
+                dataStream.appendChild(node);
+            }
+        }
+        
+        function initScrollAnimation() {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } });
+            }, { threshold: 0.1 });
+            document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+        }
+        
+        function initThemeToggle() {
+            const btn = document.getElementById('themeToggle');
+            btn.addEventListener('click', () => {
+                document.body.classList.toggle('dark');
+                btn.textContent = document.body.classList.contains('dark') ? '☀️ 浅色模式' : '🌓 深色模式';
+            });
+        }
+        
+        function initAIAssistant() {
+            const assistant = document.getElementById('aiAssistant');
+            assistant.addEventListener('click', () => {
+                assistant.classList.toggle('active');
+                setTimeout(() => assistant.classList.remove('active'), 5000);
+            });
+        }
+        
+        function initParticles() {
+            const container = document.getElementById('particleContainer');
+            document.addEventListener('mousemove', (e) => {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = e.clientX + 'px';
+                particle.style.top = e.clientY + 'px';
+                const dx = (Math.random() - 0.5) * 60;
+                const dy = (Math.random() - 0.5) * 60 - 30;
+                particle.style.setProperty('--dx', dx + 'px');
+                particle.style.setProperty('--dy', dy + 'px');
+                container.appendChild(particle);
+                setTimeout(() => particle.remove(), 1000);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            createDataNodes();
+            initScrollAnimation();
+            initThemeToggle();
+            initAIAssistant();
+            initParticles();
+            
+            // 1. 高校AI使用率对比
+            const usageRateCtx = document.getElementById('usageRateChart').getContext('2d');
+            new Chart(usageRateCtx, {
+                type: 'bar',
+                data: { labels: ['中国大学生', '中国高校师生', '英国大学生'], datasets: [{ label: 'AI使用率 (%)', data: [99.2, 99, 92], backgroundColor: ['rgba(67, 97, 238, 0.8)', 'rgba(157, 78, 221, 0.8)', 'rgba(247, 37, 133, 0.8)'], borderColor: ['rgb(67, 97, 238)', 'rgb(157, 78, 221)', 'rgb(247, 37, 133)'], borderWidth: 2, borderRadius: 5 }] },
+                options: { responsive: true, animation: { duration: 2000, easing: 'easeOutQuart' }, plugins: { legend: { display: false }, title: { display: true, text: '高校AI使用率对比 (%)', font: { size: 16 } } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } }
+            });
+            
+            // 2. 使用频率分布
+            const frequencyCtx = document.getElementById('frequencyChart').getContext('2d');
+            new Chart(frequencyCtx, {
+                type: 'doughnut',
+                data: { labels: ['每天多次使用 (重度)', '每周多次使用 (中度)', '偶尔使用 (轻度)', '基本不用'], datasets: [{ data: [11.7, 46.3, 41.2, 0.8], backgroundColor: ['rgba(247, 37, 133, 0.8)', 'rgba(67, 97, 238, 0.8)', 'rgba(157, 78, 221, 0.8)', 'rgba(76, 201, 240, 0.8)'], borderWidth: 2, borderColor: 'white' }] },
+                options: { responsive: true, animation: { duration: 2000, easing: 'easeOutBounce' }, plugins: { legend: { position: 'bottom' } }, cutout: '60%' }
+            });
+            
+            // 3. 各年级使用差异
+            const gradeUsageCtx = document.getElementById('gradeUsageChart').getContext('2d');
+            new Chart(gradeUsageCtx, {
+                type: 'bar',
+                data: { labels: ['大一', '大二', '大三', '大四'], datasets: [{ label: '重度使用率 (%)', data: [8.0, 12.3, 16.7, 21.2], backgroundColor: ['rgba(76, 201, 240, 0.8)', 'rgba(67, 97, 238, 0.8)', 'rgba(157, 78, 221, 0.8)', 'rgba(247, 37, 133, 0.8)'], borderColor: ['rgb(76, 201, 240)', 'rgb(67, 97, 238)', 'rgb(157, 78, 221)', 'rgb(247, 37, 133)'], borderWidth: 2, borderRadius: 5 }] },
+                options: { responsive: true, animation: { duration: 1500, easing: 'easeOutElastic' }, scales: { y: { beginAtZero: true, max: 25, title: { display: true, text: '百分比 (%)' } } } }
+            });
+            
+            // 4. 学科差异雷达图
+            const majorUsageCtx = document.getElementById('majorUsageChart').getContext('2d');
+            new Chart(majorUsageCtx, {
+                type: 'radar',
+                data: { labels: ['代码编写', '文字润色', '报表/PPT', '图像生成', '音视频剪辑'], datasets: [
+                    { label: '理工农医类', data: [85, 45, 60, 30, 25], backgroundColor: 'rgba(67, 97, 238, 0.2)', borderColor: 'rgb(67, 97, 238)', pointBackgroundColor: 'rgb(67, 97, 238)', pointBorderColor: '#fff' },
+                    { label: '文史哲类', data: [20, 90, 50, 40, 30], backgroundColor: 'rgba(157, 78, 221, 0.2)', borderColor: 'rgb(157, 78, 221)', pointBackgroundColor: 'rgb(157, 78, 221)', pointBorderColor: '#fff' },
+                    { label: '经管法类', data: [30, 70, 85, 35, 20], backgroundColor: 'rgba(247, 37, 133, 0.2)', borderColor: 'rgb(247, 37, 133)', pointBackgroundColor: 'rgb(247, 37, 133)', pointBorderColor: '#fff' },
+                    { label: '教育艺术类', data: [25, 60, 40, 80, 75], backgroundColor: 'rgba(76, 201, 240, 0.2)', borderColor: 'rgb(76, 201, 240)', pointBackgroundColor: 'rgb(76, 201, 240)', pointBorderColor: '#fff' }
+                ] },
+                options: { animation: { duration: 2000, easing: 'easeOutElastic' }, scales: { r: { angleLines: { color: 'rgba(0,0,0,0.1)' }, suggestedMin: 0, suggestedMax: 100, ticks: { backdropColor: 'transparent' }, grid: { color: 'rgba(0,0,0,0.1)' } } } }
+            });
+            
+            // 5. 学术争议风险饼图
+            const academicRiskCtx = document.getElementById('academicRiskChart').getContext('2d');
+            new Chart(academicRiskCtx, { type: 'pie', data: { labels: ['面临学术争议风险', '未面临学术争议风险'], datasets: [{ data: [65.9, 34.1], backgroundColor: ['rgba(247, 37, 133, 0.8)', 'rgba(67, 97, 238, 0.8)'], borderWidth: 2, borderColor: 'white' }] }, options: { responsive: true, animation: { duration: 2000, easing: 'easeOutBounce' }, plugins: { legend: { position: 'bottom' } } } });
+            
+            // 6. 担忧条形图
+            const concernCtx = document.getElementById('concernChart').getContext('2d');
+            new Chart(concernCtx, { type: 'bar', data: { labels: ['思维懒惰', '忽视身边人', '心理依赖', '职业被取代', '隐私安全'], datasets: [{ label: '担忧比例 (%)', data: [62.3, 53.7, 40.9, 40.5, 35.2], backgroundColor: ['rgba(247, 37, 133, 0.8)', 'rgba(248, 150, 30, 0.8)', 'rgba(157, 78, 221, 0.8)', 'rgba(67, 97, 238, 0.8)', 'rgba(76, 201, 240, 0.8)'], borderColor: ['rgb(247, 37, 133)', 'rgb(248, 150, 30)', 'rgb(157, 78, 221)', 'rgb(67, 97, 238)', 'rgb(76, 201, 240)'], borderWidth: 2, borderRadius: 5 }] }, options: { animation: { duration: 1500, easing: 'easeOutElastic' }, indexAxis: 'y', scales: { x: { beginAtZero: true, max: 70, grid: { color: 'rgba(0,0,0,0.05)' } }, y: { grid: { display: false } } } } });
+            
+            // 7. 中英对比
+            const globalComparisonCtx = document.getElementById('globalComparisonChart').getContext('2d');
+            new Chart(globalComparisonCtx, { type: 'bar', data: { labels: ['使用过AI', '在评估中使用AI', '频繁使用AI'], datasets: [{ label: '中国大学生', data: [99.2, 65.9, 58.0], backgroundColor: 'rgba(220, 53, 69, 0.8)', borderColor: 'rgb(220, 53, 69)', borderWidth: 2, borderRadius: 5 }, { label: '英国大学生', data: [92, 88, 58], backgroundColor: 'rgba(67, 97, 238, 0.8)', borderColor: 'rgb(67, 97, 238)', borderWidth: 2, borderRadius: 5 }] }, options: { animation: { duration: 1500, easing: 'easeOutElastic' }, scales: { y: { beginAtZero: true, max: 100, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { grid: { display: false } } } } });
+            
+            // 8. 未来策略极坐标图
+            const futureStrategyCtx = document.getElementById('futureStrategyChart').getContext('2d');
+            new Chart(futureStrategyCtx, { type: 'polarArea', data: { labels: ['学习AI知识', '提升专业能力', '培养创造力', '发展批判思维', '增强沟通能力'], datasets: [{ data: [62.3, 59.7, 62.0, 56.0, 45.5], backgroundColor: ['rgba(67, 97, 238, 0.8)', 'rgba(157, 78, 221, 0.8)', 'rgba(247, 37, 133, 0.8)', 'rgba(248, 150, 30, 0.8)', 'rgba(76, 201, 240, 0.8)'], borderWidth: 2, borderColor: 'white' }] }, options: { responsive: true, animation: { duration: 2000, easing: 'easeOutBounce' }, plugins: { legend: { position: 'bottom' } } } });
+            
+            // 9. 使用场景饼图 ECharts
+            const usageScenarioChart = echarts.init(document.getElementById('usageScenarioChart'));
+            usageScenarioChart.setOption({ tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c}%' }, legend: { orient: 'vertical', right: 10, top: 'center' }, series: [{ name: '使用场景', type: 'pie', radius: ['40%', '70%'], avoidLabelOverlap: false, itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 }, label: { show: false }, emphasis: { label: { show: true, fontSize: 18, fontWeight: 'bold' } }, data: [{ value: 61.3, name: '资料查询' }, { value: 58.3, name: '翻译' }, { value: 45.8, name: '写作' }, { value: 28.2, name: '计算' }, { value: 26.4, name: '绘图修图' }, { value: 24.8, name: 'PPT制作' }, { value: 24.3, name: '音视频生成' }, { value: 17.5, name: '制表' } ], color: ['#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0', '#560bad', '#b5179e', '#4895ef'] }], animation: true, animationDuration: 2000 });
+            
+            // 10. AI多元角色条形图
+            const aiRoleChart = echarts.init(document.getElementById('aiRoleChart'));
+            aiRoleChart.setOption({ tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } }, grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true }, xAxis: { type: 'value', axisLabel: { formatter: '{value}%' } }, yAxis: { type: 'category', data: ['朋友', '工作助手', '工具人', '学习伙伴', '情感安慰'] }, series: [{ name: '认同比例', type: 'bar', data: [79.1, 59.8, 42.1, 38.5, 26.0], itemStyle: { color: (params) => ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de'][params.dataIndex], borderRadius: [0, 5, 5, 0] }, label: { show: true, position: 'right', formatter: '{c}%' } }], animation: true, animationDuration: 1500 });
+            
+            // 11. 政策演变饼图
+            const policyTimeline = echarts.init(document.getElementById('policyTimeline'));
+            policyTimeline.setOption({ tooltip: { trigger: 'item' }, legend: { data: ['禁止阶段', '开放阶段'], top: '5%' }, series: [{ name: '政策演变', type: 'pie', radius: ['40%', '70%'], center: ['50%', '60%'], itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 }, label: { show: false }, emphasis: { label: { show: true, fontSize: 18, fontWeight: 'bold' } }, data: [{ value: 45, name: '禁止阶段 (2023)' }, { value: 55, name: '开放阶段 (2024)' }], color: ['#f72585', '#4361ee'] }], animation: true });
+            
+            // 12. 桑基图
+            const sankeyChart = echarts.init(document.getElementById('sankeyChart'));
+            sankeyChart.setOption({ tooltip: { trigger: 'item', formatter: '{b}: {c}' }, series: { type: 'sankey', layout: 'none', emphasis: { focus: 'adjacency' }, data: [{ name: '理工农医类' }, { name: '文史哲类' }, { name: '经管法类' }, { name: '教育艺术类' }, { name: '代码编写' }, { name: '文字润色' }, { name: '报表/PPT' }, { name: '图像生成' }, { name: '音视频剪辑' }], links: [{ source: '理工农医类', target: '代码编写', value: 85 }, { source: '理工农医类', target: '计算', value: 60 }, { source: '文史哲类', target: '文字润色', value: 90 }, { source: '文史哲类', target: '翻译', value: 70 }, { source: '经管法类', target: '报表/PPT', value: 85 }, { source: '经管法类', target: '写作', value: 50 }, { source: '教育艺术类', target: '图像生成', value: 80 }, { source: '教育艺术类', target: '音视频剪辑', value: 75 }], lineStyle: { color: 'gradient', curveness: 0.5 } } });
+            
+            // 13. 旭日图
+            const sunburstChart = echarts.init(document.getElementById('sunburstChart'));
+            sunburstChart.setOption({ series: { type: 'sunburst', data: [{ name: 'AI使用', children: [{ name: '学习场景', children: [{ name: '资料查询', value: 61.3 }, { name: '翻译', value: 58.3 }, { name: '写作', value: 45.8 }, { name: '计算', value: 28.2 }] }, { name: '创作场景', children: [{ name: '绘图修图', value: 26.4 }, { name: 'PPT制作', value: 24.8 }, { name: '音视频生成', value: 24.3 }, { name: '制表', value: 17.5 }] }, { name: '生活场景', children: [{ name: '查询生活常识', value: 48.3 }, { name: '制定旅游计划', value: 40 }, { name: '兴趣入门指南', value: 37 }] }, { name: '社交场景', children: [{ name: '学习沟通技巧', value: 41.9 }, { name: '挑选礼物', value: 39.3 }, { name: '解决社交矛盾', value: 25 }] }] }], radius: [0, '90%'], label: { rotate: 'radial' } } });
+            
+            // 14. 热力图
+            const heatmapChart = echarts.init(document.getElementById('heatmapChart'));
+            heatmapChart.setOption({ tooltip: { position: 'top' }, grid: { height: '80%', top: '10%' }, xAxis: { type: 'category', data: ['思维懒惰', '忽视身边人', '心理依赖', '职业被取代', '隐私安全'], splitArea: { show: true } }, yAxis: { type: 'category', data: ['重度用户', '中度用户', '轻度用户', '非用户'], splitArea: { show: true } }, visualMap: { min: 0, max: 100, calculable: true, orient: 'horizontal', left: 'center', bottom: '0%', inRange: { color: ['#f0f4ff', '#4361ee'] } }, series: { name: '担忧程度', type: 'heatmap', data: [[0,0,75],[0,1,65],[0,2,50],[0,3,30],[1,0,60],[1,1,55],[1,2,45],[1,3,25],[2,0,70],[2,1,45],[2,2,35],[2,3,20],[3,0,50],[3,1,45],[3,2,40],[3,3,35],[4,0,45],[4,1,40],[4,2,35],[4,3,25]], label: { show: true, formatter: (p) => p.value[2] + '%' }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } } } });
+            
+            // 15. 词云图
+            const wordCloudChart = echarts.init(document.getElementById('wordCloudChart'));
+            wordCloudChart.setOption({ tooltip: { show: true }, series: [{ type: 'wordCloud', shape: 'circle', left: 'center', top: 'center', width: '90%', height: '90%', sizeRange: [12, 60], rotationRange: [-90, 90], rotationStep: 45, gridSize: 8, drawOutOfBound: false, textStyle: { fontFamily: 'sans-serif', fontWeight: 'bold', color: () => 'rgb(' + [Math.round(Math.random() * 160 + 50), Math.round(Math.random() * 160 + 50), Math.round(Math.random() * 160 + 50)].join(',') + ')' }, emphasis: { focus: 'self', textStyle: { textShadowBlur: 10, textShadowColor: '#333' } }, data: [{ name: '效率', value: 100 }, { name: '学习', value: 95 }, { name: '工具', value: 90 }, { name: '依赖', value: 85 }, { name: '风险', value: 80 }, { name: '思维', value: 75 }, { name: '创新', value: 70 }, { name: '辅助', value: 65 }, { name: '能力', value: 60 }, { name: '学术', value: 55 }, { name: '诚信', value: 50 }, { name: '未来', value: 45 }, { name: '职业', value: 40 }, { name: '发展', value: 35 }, { name: '平衡', value: 30 }, { name: '智能', value: 25 }, { name: '教育', value: 20 }, { name: '技术', value: 15 }] }] });
+            
+            // 响应窗口大小变化
+            window.addEventListener('resize', () => {
+                usageScenarioChart.resize(); aiRoleChart.resize(); policyTimeline.resize(); sankeyChart.resize(); sunburstChart.resize(); heatmapChart.resize(); wordCloudChart.resize();
+            });
+        });
+        
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
+</body>
+</html>
